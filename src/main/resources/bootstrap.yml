@@ -1,0 +1,55 @@
+spring:
+
+  application:
+    name: employeeservice
+  profiles:
+    active: dev
+  cloud:
+    config:
+      uri: http://localhost:8084
+  config:
+    import: configserver:http://localhost:8084
+
+server:
+  port: 8080
+
+resilience4j.circuitbreaker:
+  instances:
+    employeeservice:
+      registerHealthIndicator: true
+      ringBufferSizeInClosedState: 5
+      ringBufferSizeInOpenState: 3
+      waitDurationInOpenState: 10s
+      failureRateThreshold: 50
+      recordExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+        - java.io.IOException
+        - java.util.concurrent.TimeoutException
+        - org.springframework.web.client.ResourceAccessException
+
+resilience4j.bulkhead:
+  instances:
+    bulkheadEmployeeService:
+      maxWaitDuration: 2ms
+      maxConcurrentCalls: 20
+
+resilience4j.ratelimiter:
+  instances:
+    employeeservice:
+      limitForPeriod: 5
+      limitRefreshPeriod: 5000
+
+resilience4j.retry:
+  instances:
+    retryEmployeeService:
+      maxRetryAttempts: 5
+      waitDuration: 10000
+      retryExceptions:
+        - java.util.concurrent.TimeoutException
+
+resilience4j.thread-pool-bulkhead:
+  instances:
+    bulkheadEmployeeService:
+      maxThreadPoolSize: 1
+      coreThreadPoolSize: 1
+      queueCapacity: 1
